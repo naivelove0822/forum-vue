@@ -148,6 +148,16 @@ export default {
       // 透過isLoading增加畫面顯示的一致性
     }
   },
+  // 透過watch監聽Edit表單，讓資料能顯示在畫面上
+  watch: {
+    initialRestaurant (newValue) {
+      // 可以帶兩個參數一個是新資料一個是舊資料
+      this.restaurant = {
+        ...this.restaurant,
+        ...newValue
+      }
+    }
+  },
   created() {
     this.fetchCategories(),
     this.restaurant = {
