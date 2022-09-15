@@ -1,5 +1,6 @@
 <template>
 <!-- 提交表單的V-on綁在form上而不是button -->
+
   <form @submit.stop.prevent="handleSubmit">
     <div class="form-group mb-4">
       <label for="text">留下評論：</label>
@@ -19,6 +20,7 @@
       <button
         type="submit"
         class="btn btn-primary mr-0"
+        :disabled="isProcessing"
       >
         Submit
       </button>
@@ -27,7 +29,9 @@
 </template>
 
 <script>
-import { v4 as uuidv4 } from "uuid"
+
+import commentsAPI from './../apis/comments'
+import { Toast } from './../utils/helpers'
 
 export default {
   props: {
@@ -39,20 +43,55 @@ export default {
 
   data() {
     return {
-      text: ''
+      text: '',
+      isProcessing: false,
+      isLoading: true
     }
   },
   methods: {
-    handleSubmit () {
-      // TodO: 向API發送POST請求
-      // 伺服器新增Comment成功後
-      this.$emit('after-create-comment', {
-        commentId: uuidv4(), //尚未串接API暫時用隨機的ID
+    async handleSubmit () {
+      try {
+        if (!this.text) {
+          Toast.fire({
+            icon: 'warning',
+            title: '您尚未填寫任何評論'
+          })
+          return
+        }
+        this.isProcessing = true
+
+        const { data } = await commentsAPI.createComment({ restaurantId: this.restaurantId, text: this.text })
+
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+
+
+        this.$emit('after-create-comment', {
+        commentId: data.commentId, //尚未串接API暫時用隨機的ID
         restaurantId: this.restaurantId,
         text: this.text
       }),
-      this.text = '' //清空表單
+        this.isProcessing = false
+        this.text = '' //清空表單
+      } catch (error) {
+        this.isProcessing = false
+        console.log('error', error)
+        Toast.fire({
+          icon: 'error',
+          title: '無法新增留言，請稍後再試'
+        })
+      }
+      // TodO: 向API發送POST請求
+      // 伺服器新增Comment成功後
+      
     }
   }
 }
 </script>
+
+<style scoped>
+.form-group {
+  margin: 21px 0 8px;
+}
+</style>

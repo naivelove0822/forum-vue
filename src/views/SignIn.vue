@@ -83,15 +83,20 @@ export default {
       this.isProcessing = true
 
       
-       const authorization =  await authorizationAPI.signIn({
+       const response =  await authorizationAPI.signIn({
         email: this.email,
         password: this.password
       })
-       const { data } = authorization
+
+       const { data } = response
           if (data.status === 'error') {
           throw new Error(data.message)
         }
+        // 將 token 存入 localstorage內
         localStorage.setItem('token', data.token)
+        // 將資料傳到Vuex中
+        this.$store.commit('setCurrentUser', data.user)
+        // 成功登入後轉到餐廳首頁
         this.$router.push('/restaurants')
       } catch (error) { 
         this.password= ''

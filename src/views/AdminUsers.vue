@@ -3,7 +3,8 @@
     <!-- AdminNav Component -->
     <AdminNav />
 
-    <table class="table">
+    <Spinner v-if="isLoading" />
+    <table v-else class="table">
       <thead class="thead-dark">
         <tr>
           <th scope="col">
@@ -29,25 +30,15 @@
             {{ user.id }}
           </th>
           <td>{{ user.email }}</td>
-          <td v-if="user.isAdmin">admin</td>
-          <td v-else>User</td>
+          <td >{{ user.isAdmin ? 'admin' : 'user'}}</td>
           <td>
             <button
               type="button"
               class="btn btn-link"
-              v-show="user.isAdmin"
               v-if="currentUser.id !== user.id"
-              @click.stop.prevent="toggleUserRole(user.id)"
+              @click.stop.prevent="toggleUserRole({userId: user.id, isAdmin: user.isAdmin})"
             >
-              set as user
-            </button>
-            <button
-              type="button"
-              class="btn btn-link"
-              v-show="!user.isAdmin"
-              @click.stop.prevent="toggleUserRole(user.id)"
-            >
-              set as admin
+             {{ user.isAdmin ? 'set a user' : 'set a admin' }}
             </button>
           </td>
         </tr>
@@ -58,76 +49,72 @@
 
 <script>
 import AdminNav from './../components/AdminNav.vue'
+import adminsAPI from './../apis/admin'
+import { Toast } from './../utils/helpers'
+import { mapState } from 'vuex'
+import Spinner from './../components/Spinner.vue'
 
 
-
-const dummyData = {
-    "users": [
-        {
-            "id": 1,
-            "name": "root",
-            "email": "root@example.com",
-            "password": "$2a$10$jun9aJYSq8qyzln/hR6RQuVDs.pJCTg/eJ0xULDtLVHqW85v2PS6G",
-            "isAdmin": true,
-            "image": null,
-            "createdAt": "2022-08-05T07:37:02.000Z",
-            "updatedAt": "2022-08-05T07:37:02.000Z"
-        },
-        {
-            "id": 2,
-            "name": "user1",
-            "email": "user1@example.com",
-            "password": "$2a$10$crHAW94MhTrGk3FSKr5D1ugFVFhF7JaSEkxWAnN3ydVvKvyS1pVGu",
-            "isAdmin": false,
-            "image": null,
-            "createdAt": "2022-08-05T07:37:02.000Z",
-            "updatedAt": "2022-08-05T07:37:02.000Z"
-        },
-        {
-            "id": 3,
-            "name": "user2",
-            "email": "user2@example.com",
-            "password": "$2a$10$D/F3ZfMlK0oTMTZQStWpOOEIvZeWUyApAeaZoBpj3s6HrYA9a/RMa",
-            "isAdmin": false,
-            "image": null,
-            "createdAt": "2022-08-05T07:37:02.000Z",
-            "updatedAt": "2022-08-05T07:37:02.000Z"
-        }
-    ]
-}
-
-const dummyUser = {
-  currentUser: {
-    id: 1,
-    name: '管理者',
-    email: 'root@example.com',
-    image: 'https://i.pravatar.cc/300',
-    isAdmin: true
-  },
-  isAuthenticated: true
-}
 
 export default {
   components: {
-    AdminNav
+    AdminNav,
+    Spinner
   }, 
   data () {
     return {
       users: [],
-      currentUser: dummyUser.currentUser
+      isLoading: true
     }
+  },
+  computed: {
+    ...mapState(['currentUser'])
   },
   created() {
     this.fetchUser()
   },
   methods: {
-    fetchUser () {
-      const { users } = dummyData
-      this.users = users
+    async fetchUser () {
+      try {
+        const { data } = await adminsAPI.users.get()
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+        this.users = data.users
+        this.isLoading = false
+      } catch (error) {
+        this.isLoading = false
+        Toast.fire({
+          icon: 'error',
+          title: '無法取得資料，請稍後再試'
+        })
+      }
+      
     },
-    toggleUserRole(userId) {
-      const user = this.users.find(user => user.id === userId)
-      user.isAdmin = !user.isAdmin
+    async toggleUserRole({ userId, isAdmin}) {
+      try {
+        const willBeAdmin = !isAdmin
+        const { data } = await adminsAPI.users.update({ userId, isAdmin: willBeAdmin.toString() })
+
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+        this.users = this.users.map(user => {
+          if (user.id !== userId) {
+            return user
+          }
+          return {
+            ...user,
+            isAdmin: willBeAdmin
+          }
+        })
+
+      } catch (error) {
+        Toast.fire({
+          icon: 'error',
+          title: '無法切換，請稍後再試'
+        })
+      }
     }
   }
 }

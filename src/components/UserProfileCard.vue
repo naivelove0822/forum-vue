@@ -26,7 +26,7 @@
               v-if="isFollowed"             
               type="button"
               class="btn btn-danger"
-              @click.stop.prevent="deleteFollow"            
+              @click.stop.prevent="deleteFollow(user.id)"            
             >
               取消追蹤
             </button>
@@ -34,7 +34,7 @@
               v-else
               type="button"
               class="btn btn-primary"
-              @click.stop.prevent="addFollow"
+              @click.stop.prevent="addFollow(user.id)"
             >
               追蹤
             </button>
@@ -46,13 +46,17 @@
 </template>
 
 <script>
+import usersAPI from './../apis/users'
+import { Toast } from './../utils/helpers'
+
+
 export default {
   props: {
     user: {
       type: Object,
       require: true
     },
-    initialIsFollower: {
+    initialIsFollowed: {
       type: Boolean,
       require: true
     },
@@ -63,15 +67,46 @@ export default {
   },
   data () {
     return {
-      isFollowed: this.initialIsFollower
+      isFollowed: this.initialIsFollowed
+    }
+  },
+  watch: {
+    initialIsFollowed (isFollowed) {
+      this.isFollowed = {
+        ...this.isFollowed,
+        ...isFollowed
+      }
     }
   },
   methods: {
-    addFollow () {
-      this.isFollowed = true  
+    async addFollow (userId) {
+      try {
+        const { data } = await usersAPI.addFollowing({ userId })
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+        this.isFollowed = true 
+      } catch (error) {
+        console.log('error', error)
+        Toast.fire({
+          icon: 'error',
+          title: '追蹤失敗，請稍後再試'
+        })
+      } 
     },
-    deleteFollow () {
-      this.isFollowed = false
+    async deleteFollow (userId) {
+      try {
+        const { data } = await usersAPI.deleteFollowing({ userId })
+        if (data.status === 'error') {
+          throw new Error(data.message)
+        }
+        this.isFollowed = false
+      } catch (error) {
+        Toast.fire({
+          icon: 'error',
+          title: '目前無法刪除，請稍後再試'
+        })
+      }
     }
   }
 }

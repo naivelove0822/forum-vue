@@ -40,11 +40,12 @@
              :to="{name: 'user', params: { id: currentUser.id}}" 
              class="text-white mr-3"
           > 
-           使用者 您好
+           {{ currentUser.name }} 您好
          </router-link>
          <button
            type="button" 
            class="btn btn-sm btn-outline-success my-2 my-sm-0"
+           @click="logout"
           >
            登出
           </button>
@@ -55,42 +56,35 @@
 </template>
 
 <script>
-
-const dummyUser = {
-  currentUser: {
-    id: 1,
-    name: '管理者',
-    email: 'root@example.com',
-    image: 'https://i.pravatat.cc/300',
-    isAdmin: true
-  },
-  isAuthenticated: true
-}
+// 透過VUEX的mapState方法判斷使用者狀態
+import { mapState } from 'vuex'
 
 export default {
-  data () {
-    return {
-      currentUser: {
-        id: -1,
-        name: '',
-        email: '',
-        image: '',
-        isAdmin: false,
-      },
-      isAuthenticated: false
-    }
-  },
-  created () {
-    this.fetchUser()
+  computed: {
+    ...mapState(['currentUser', 'isAuthenticated'])
   },
   methods: {
-    fetchUser () {
-      this.currentUser = {
-        ...this.currentUser,
-        ...dummyUser.currentUser
-      }
-      this.isAuthenticated = dummyUser.isAuthenticated
+    logout() {
+      this.$store.commit('revokeAuthentication')
+      this.$router.push('/signin')
     }
   }
 }
 </script>
+
+<style scoped>
+  .navbar-toggler {
+    min-width: 70px;
+    margin-right: 0;
+  }
+
+  nav.bg-dark {
+    padding: 14px 16px;
+    background-color: #bd2333 !important;
+  }
+
+  .navbar-brand {
+    font-size: 19px;
+    padding: 0;
+}
+</style>

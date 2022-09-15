@@ -3,8 +3,18 @@ import VueRouter from 'vue-router'
 import NotFound from '../views/NotFound.vue'
 import SignIn from '../views/SignIn.vue'
 import Restaurants from '../views/Restaurants.vue'
-
+import store from './../store'
 Vue.use(VueRouter)
+
+const authorizeIsAdmin = (to, from, next) => {
+  const currentUser = store.state.currentUser
+  if (currentUser && !currentUser.isAdmin) {
+    next('/not-found')
+    return
+  }
+
+  next()
+}
 
 const routes = [
   {
@@ -64,38 +74,45 @@ const routes = [
   },
   {
     path: '/admin',
+    // 要完全匹配的路由才會進入 (exact的用法)
     exact: true,
     redirect: '/admin/restaurants'
   },
   {
     path: '/admin/restaurants',
     name: 'admin-restaurants',
-    component: () => import('../views/AdminRestaurants')
+    component: () => import('../views/AdminRestaurants'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '/admin/restaurants/new',
     name: 'admin-restaurant-new',
-    component: () => import('../views/AdminRestaurantNew.vue')
+    component: () => import('../views/AdminRestaurantNew.vue'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '/admin/restaurants/:id/edit',
     name: 'admin-restaurant-edit',
-    component: () => import('../views/AdminRestaurantEdit.vue')
+    component: () => import('../views/AdminRestaurantEdit.vue'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '/admin/restaurants/:id',
     name: 'admin-restaurant',
-    component: () => import('../views/AdminRestaurant.vue')
+    component: () => import('../views/AdminRestaurant.vue'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '/admin/categories',
     name: 'admin-categories',
-    component: () => import('../views/AdminCategories.vue')
+    component: () => import('../views/AdminCategories.vue'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '/admin/users',
     name: 'admin-users',
-    component: () => import('../views/AdminUsers.vue')
+    component: () => import('../views/AdminUsers.vue'),
+    beforeEnter: authorizeIsAdmin
   },
   {
     path: '*',
@@ -108,5 +125,33 @@ const router = new VueRouter({
   linkExactActiveClass: 'active',
   routes
 })
+
+// 類似之前用的beforeRouterUpdate 但作用在全域
+router.beforeEach( async (to, from, next) => {
+  // 從local中取出token
+  const token = localStorage.getItem('token')
+  const tokenInStore = store.state.token
+// 預設是未驗證
+  let isAuthenticated = store.state.isAuthenticated
+// 如果有token才驗證
+  if (token && token !== tokenInStore) {
+    isAuthenticated = await store.dispatch('fetchCurrentUser')
+  }
+
+  const pathWithoutAuthentiocation = ['sign-in', 'sign-up']
+
+  // 如果 token 無效且進入需要驗證的頁面則轉址到登入頁
+  if (!isAuthenticated && !pathWithoutAuthentiocation.includes(to.name)) {
+    next('/signin')
+    return
+  }
+  // 如果 token 有效且進入不需要驗證到頁面則轉址到餐廳首頁
+  if (isAuthenticated && pathWithoutAuthentiocation.includes(to.name)) {
+    next('/restaurants')
+    return
+  }
+  next()
+})
+
 
 export default router

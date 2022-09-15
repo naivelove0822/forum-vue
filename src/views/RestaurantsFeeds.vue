@@ -2,6 +2,8 @@
   <div class="container py-5">
       <!-- 使用NavTabs -->
     <NavTabs />
+    <Spinner v-if="isLoading" />
+    <template v-else>
     <h1 class="mt-5">
       最新動態
     </h1>
@@ -18,6 +20,7 @@
         <NewestComments :comments="comments" />
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -27,7 +30,7 @@ import NewestRestaurants from './../components/NewestRestaurants.vue'
 import NewestComments from './../components/NewestComments.vue'
 import restaurantsAPI from './../apis/restaurants'
 import { Toast } from '../utils/helpers'
-
+import Spinner from './../components/Spinner.vue'
 
 
 
@@ -36,11 +39,13 @@ export default {
     NavTabs,
     NewestRestaurants,
     NewestComments,
+    Spinner
   },
   data () {
     return {
       restaurants: [],
-      comments: []
+      comments: [],
+      isLoading: true
     }
   },
   created () {
@@ -49,13 +54,16 @@ export default {
   methods: {
     async fetchFeeds () {
       try {
+        this.isLoading = true
         const response = await restaurantsAPI.getFeeds()
         console.log('response', response)
         const { comments, restaurants } = response.data
         // 如果沒指定data，會在全部資料內找不會進到裡面那一層因此不能用filter。
         this.comments = comments.filter(comment => comment.Restaurant)
-        this.restaurants = restaurants   
+        this.restaurants = restaurants
+        this.isLoading = false   
         } catch(error) {
+          this.isLoading = false
             console.log('error', error)
             Toast.fire({
                 icon: error,

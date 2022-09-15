@@ -25,7 +25,8 @@
         </div>
       </div>
     </form>
-    <table class="table">
+    <Spinner v-if="isLoading" />
+    <table v-else class="table">
       <thead class="thead-dark">
         <tr>
           <th
@@ -104,20 +105,23 @@
 import AdminNav from '@/components/AdminNav'
 import adminAPI from './../apis/admin'
 import { Toast } from './../utils/helpers'
+import Spinner from './../components/Spinner.vue'
 //  2. 定義暫時使用的資料
 
 
 export default {
   name: 'AdminCategories',
   components: {
-    AdminNav
+    AdminNav,
+    Spinner
   },
   // 3. 定義 Vue 中使用的 data 資料
   data () {
     return {
       categories: [],
       newCategoryName: '',
-      isProcessing: false
+      isProcessing: false,
+      isLoading: true
     }
   },
   // 5. 調用 `fetchCategories` 方法
@@ -139,7 +143,9 @@ export default {
           nameCached: ''
          }
        })
+       this.isLoading = false
       } catch (error) {
+        this.isLoading = false
         console.log('error', error)
         Toast.fire({
           icon: 'error',
