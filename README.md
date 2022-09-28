@@ -1,6 +1,6 @@
 # forum-front-end-vue
 
-<<<<<<< HEAD
+
 ![餐廳論壇頁](./public//image/image.png)
 
 ## GitHub Page
