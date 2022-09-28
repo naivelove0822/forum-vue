@@ -1,11 +1,9 @@
 # forum-front-end-vue
 
 ## GitHub Page
-```
-This is [GitHub Page](https://naivelove0822.github.io/forum-vue/
-)
 
-```
+This is [GitHub Page](https://naivelove0822.github.io/forum-vue/
+).
 
 ## Project setup
 ```
